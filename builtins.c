@@ -165,7 +165,16 @@ int do_domainname(int nargs, char **args)
 
 int do_exec(int nargs, char **args)
 {
-    return -1;
+    char tmp[128];
+    int i, len;
+
+    for (i = 1, len = 0; i < nargs; ++i, ++len) {
+        memcpy(tmp+len, args[i], strlen(args[i]));
+        len += strlen(args[i]);
+        tmp[len] = ' ';
+    }
+    tmp[len] = '\0';
+    return system(tmp);
 }
 
 int do_export(int nargs, char **args)

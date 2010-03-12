@@ -603,8 +603,6 @@ int main(int argc, char **argv)
     struct sigaction act;
     char tmp[PROP_NAME_MAX];
     struct pollfd ufds[4];
-    char *tmpdev;
-    char* debuggable;
 
     act.sa_handler = sigchld_handler;
     act.sa_flags = SA_NOCLDSTOP;
@@ -615,32 +613,6 @@ int main(int argc, char **argv)
     /* clear the umask */
     umask(0);
 
-    mount("tmpfs", "/tmp", "tmpfs", MS_NODEV|MS_NOSUID, "mode=1777");
-    system("/sbin/sreadahead -d -t 20 &");
-    mount("tmpfs", "/lib/init/rw", "tmpfs", MS_NOSUID, "mode=0755");
-    mount("proc", "/proc", "proc", MS_NOEXEC|MS_NODEV|MS_NOSUID, NULL);
-    mount("sysfs", "/sys", "sysfs", MS_NOEXEC|MS_NODEV|MS_NOSUID, NULL);
-    mount("varrun", "/var/run", "tmpfs", MS_NOSUID, "mode=0755");
-    mount("varlock", "/var/lock", "tmpfs", MS_NOEXEC|MS_NODEV|MS_NOSUID, "mode=1777");
-
-    mount("udev", "/dev", "tmpfs", 0, "mode=0755");
-    mknod("/dev/null", S_IFCHR | 0666, (1 << 8) | 3);
-#if 1
-    system("udevd --daemon");
-    system("udevadm trigger");
-    system("udevadm settle");
-#else
-    system("/sbin/mdev -s");
-#endif
-
-    mkdir("/dev/shm", 1777);
-    mount("tmpfs", "/dev/shm", "tmpfs", MS_NODEV|MS_NOSUID, NULL);
-    mkdir("/dev/pts", 0755);
-    mount("devpts", "/dev/pts", "devpts", MS_NOEXEC|MS_NOSUID, "gid=5,mode=620");
-    mkdir("/dev/socket", 0755);
-
-    mknod("/dev/ptmx", S_IFCHR | 0666, (5 << 8) | 2);
-    mkfifo("/dev/initctl", 0600);
         /* We must have some place other than / to create the
          * device nodes for kmsg and null, otherwise we won't
          * be able to remount / read-only later on.
@@ -690,6 +662,7 @@ int main(int argc, char **argv)
         fcntl(s[1], F_SETFL, O_NONBLOCK);
     }
 
+    mkfifo("/dev/initctl", 0600);
     init_fd = open("/dev/initctl", O_RDONLY|O_NONBLOCK);
     /* make sure we actually have all the pieces we need */
     if((init_fd < 0) ||
@@ -697,20 +670,14 @@ int main(int argc, char **argv)
         ERROR("init startup failure\n");
         return 1;
     }
-
-    system("/sbin/hwclock --systz --localtime --directisa --noadjfile");
-    system("mount -n -o remount,rw /");
-    system("mount -a");
-//    system("/sbin/mingetty --noclear tty1");
-    mkdir("/tmp/.X11-unix", 01777);
-    mkdir("/tmp/.ICE-unix", 01777);
     umask(0022);
+
     /* execute all the boot actions to get us started */
     action_for_each_trigger("early-boot", action_add_queue_tail);
     action_for_each_trigger("boot", action_add_queue_tail);
     drain_action_queue();
+    ERROR("DONE\n");
 
-ERROR("DONE\n");
     ufds[0].fd = init_fd;
     ufds[0].events = POLLIN;
     ufds[1].fd = signal_recv_fd;

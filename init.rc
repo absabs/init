@@ -1,0 +1,36 @@
+on init
+    loglevel 7
+
+    mount tmpfs tmpfs /tmp nosuid noatime nodiratime nodev mode=1777
+    exec /sbin/sreadahead -d -t 20 &
+    mount tmpfs tmpfs /lib/init/rw nosuid mode=0755
+    mount proc proc /proc nodev noexec nosuid
+    mount sysfs sysfs /sys nodev noexec nosuid
+    mount tmpfs varrun /var/run nosuid mode=0755
+    mount tmpfs varlock /var/lock nodev noexec nosuid mode=0755
+    mount tmpfs udev /dev mode=0755
+    exec mknod -m 666 /dev/null c 1 3
+    exec udevd --daemon
+    exec udevadm trigger
+    exec udevadm settle
+    mkdir /dev/shm 1777
+    mount tmpfs tmpfs /dev/shm nodev nosuid
+    mkdir /dev/pts 0755
+    mount devpts devpts /dev/pts noexec nosuid gid=5 mode=620
+    mkdir /dev/socket 0755
+    exec mknod -m 666 /dev/ptmx c 5 2
+    exec /sbin/hwclock --systz --localtime --directisa --noadjfile
+    exec mount -n -o remount,rw /
+    exec mount -a
+    mkdir /tmp/.X11-unix 1777
+    mkdir /tmp/.ICE-unix 1777
+    
+    ifup lo
+    ifup eth0
+    hostname ustc
+on boot
+    class_start default
+service slim /usr/bin/slim
+    oneshot
+service dhcp /sbin/dhclient
+    oneshot
