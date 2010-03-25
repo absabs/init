@@ -597,12 +597,39 @@ int main(int argc, char **argv)
 {
     int init_fd = -1;
     int signal_recv_fd = -1;
-    int fd_count;
-    int s[2];
-    int fd;
+    int fd, fd_count, s[2];
     struct sigaction act;
     char tmp[PROP_NAME_MAX];
     struct pollfd ufds[4];
+    pid_t pid;
+
+    mount("tmpfs", "/tmp", "tmpfs", MS_NODEV|MS_NOSUID, "mode=1777");
+    mount("proc", "/proc", "proc", MS_NOEXEC|MS_NODEV|MS_NOSUID, NULL);
+    mount("sysfs", "/sys", "sysfs", MS_NOEXEC|MS_NODEV|MS_NOSUID, NULL);
+#if BOOTCHART
+    pid = fork();
+    if (!pid) { /* child process */
+        bootchart_count = bootchart_init();
+        if (bootchart_count > 0) {
+            NOTICE("bootcharting started (period=%d ms)\n", bootchart_count*BOOTCHART_POLLING_MS);
+        } else if (bootchart_count < 0) {
+            ERROR("bootcharting init failure\n");
+            return 0;
+        } else {
+            NOTICE("bootcharting ignored\n");
+            return 0;
+        }
+
+        while (bootchart_count > 0) {
+            if (bootchart_step() < 0)
+                break;
+            --bootchart_count;
+            usleep(BOOTCHART_POLLING_MS*1000);
+        }
+        bootchart_finish();
+        return 0;
+    }
+#endif
 
     act.sa_handler = sigchld_handler;
     act.sa_flags = SA_NOCLDSTOP;
@@ -689,17 +716,6 @@ int main(int argc, char **argv)
     ufds[3].events = 0;
     ufds[3].revents = 0;
 
-#if BOOTCHART
-    bootchart_count = bootchart_init();
-    if (bootchart_count < 0) {
-        ERROR("bootcharting init failure\n");
-    } else if (bootchart_count > 0) {
-        NOTICE("bootcharting started (period=%d ms)\n", bootchart_count*BOOTCHART_POLLING_MS);
-    } else {
-        NOTICE("bootcharting ignored\n");
-    }
-#endif
-
     for(;;) {
         int nr, i, timeout = -1;
 
@@ -715,16 +731,6 @@ int main(int argc, char **argv)
                 timeout = 0;
         }
 
-#if BOOTCHART
-        if (bootchart_count > 0) {
-            if (timeout < 0 || timeout > BOOTCHART_POLLING_MS)
-                timeout = BOOTCHART_POLLING_MS;
-            if (bootchart_step() < 0 || --bootchart_count == 0) {
-                bootchart_finish();
-                bootchart_count = 0;
-            }
-        }
-#endif
         nr = poll(ufds, fd_count, timeout);
         if (nr <= 0)
             continue;

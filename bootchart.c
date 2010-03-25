@@ -21,30 +21,27 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <sys/stat.h>
 #include "bootchart.h"
 
 #define VERSION         "0.8"
 #define SAMPLE_PERIOD   0.2
-#define LOG_ROOT        "/data/bootchart"
+#define LOG_ROOT        "/tmp"
 #define LOG_STAT        LOG_ROOT"/proc_stat.log"
 #define LOG_PROCS       LOG_ROOT"/proc_ps.log"
 #define LOG_DISK        LOG_ROOT"/proc_diskstats.log"
 #define LOG_HEADER      LOG_ROOT"/header"
 #define LOG_ACCT        LOG_ROOT"/kernel_pacct"
 
-#define LOG_STARTFILE   "/data/bootchart-start"
-#define LOG_STOPFILE    "/data/bootchart-stop"
+#define LOG_STARTFILE   "/var/log/bootchart-start"
+#define LOG_STOPFILE    "/var/log/bootchart-stop"
 
 static int
 unix_read(int  fd, void*  buff, int  len)
@@ -149,7 +146,7 @@ log_header(void)
     }
 
     fprintf(out, "version = %s\n", VERSION);
-    fprintf(out, "title = Boot chart for Android ( %s )\n", date);
+    fprintf(out, "title = Boot chart by sinit ( %s )\n", date);
     fprintf(out, "system.uname = %s\n", uname);
     fprintf(out, "system.release = 0.0\n");
     fprintf(out, "system.cpu = %s\n", cpu);
