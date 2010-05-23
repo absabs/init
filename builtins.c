@@ -31,6 +31,7 @@
 #include <sys/resource.h>
 #include <linux/loop.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 
 #include "init.h"
 #include "keywords.h"
@@ -165,16 +166,29 @@ int do_domainname(int nargs, char **args)
 
 int do_exec(int nargs, char **args)
 {
-    char tmp[128];
-    int i, len;
+    int ret, status, background = 0;
+    char *ptrs[32];
 
-    for (i = 1, len = 0; i < nargs; ++i, ++len) {
-        memcpy(tmp+len, args[i], strlen(args[i]));
-        len += strlen(args[i]);
-        tmp[len] = ' ';
+    if(!strcmp(args[nargs-1], "&")) {
+        background = 1;
+        --nargs;
     }
-    tmp[len] = '\0';
-    return system(tmp);
+    ret = fork();
+    if (ret) {
+        if (!background) {
+            waitpid(ret, &status, 0);
+            if (WIFEXITED(status))
+                return WEXITSTATUS(status);
+            else
+               return 1;
+        }
+        return 0;
+    }
+
+    memset(ptrs, 0, sizeof(ptrs));
+    memcpy(ptrs, &args[1], (nargs-1)*sizeof(char*));
+    ret = execv(ptrs[0], ptrs);
+    _exit(ret);
 }
 
 int do_export(int nargs, char **args)

@@ -65,6 +65,9 @@ struct init_request {
     char    data[368];
 };
 
+#define INIT_MAGIC              0x03091969
+#define INIT_CMD_RUNLVL         1
+
 static void init_reboot(int sig)
 {
     pid_t pid;
@@ -73,6 +76,7 @@ static void init_reboot(int sig)
 //    sigprocmask_allsigs(SIG_BLOCK);
     ERROR("The system is going down NOW!");
     ERROR("Sending SIGTERM to all processes");
+    system("ifdown -a --exclude=lo");
     kill(-1, SIGTERM);
     sync();
     sleep(1);
@@ -103,7 +107,9 @@ static void handle_init_fd(int fd)
     struct init_request request;
 INFO("%d %c", request.cmd, request.runlevel);
     read(fd, &request, sizeof(request));
-    if (request.cmd == 1) {
+    if (request.magic != INIT_MAGIC)
+	    return;
+    if (request.cmd == INIT_CMD_RUNLVL) {
         switch (request.runlevel) {
             case '0':
                 sig = SIGUSR2;
@@ -257,7 +263,7 @@ void service_start(struct service *svc, const char *dynamic_args)
 
         if (needs_console) {
             setsid();
-            open_console();
+//            open_console();
         } else {
             zap_stdio();
         }
@@ -572,7 +578,7 @@ void drain_action_queue(void)
     }
 }
 
-void open_devnull_stdio(void)
+/*void open_devnull_stdio(void)
 {
     int fd;
     static const char *name = "/dev/__null__";
@@ -591,7 +597,7 @@ void open_devnull_stdio(void)
     }
 
     exit(1);
-}
+}*/
 
 int main(int argc, char **argv)
 {
