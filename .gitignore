@@ -1,5 +1,6 @@
 *.o
 *~
 init
+shutdown
 cscope.*
 tags

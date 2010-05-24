@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	request.magic = 0x03091969; 
 	request.cmd = 1;
 	request.runlevel = '0';
-	if (argc == 2 && !strcmp(argv[1], "-r"))
+	if (argc == 3 && !strcmp(argv[1], "-r"))
 		request.runlevel = '6';
 	ret = write(fd, &request, sizeof(request));
 	printf("write %d\n", ret);
