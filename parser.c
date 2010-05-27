@@ -165,6 +165,7 @@ int lookup_keyword(const char *s)
     case 'm':
         if (!strcmp(s, "kdir")) return K_mkdir;
         if (!strcmp(s, "ount")) return K_mount;
+        if (!strcmp(s, "knod")) return K_mknod;
         break;
     case 'o':
         if (!strcmp(s, "n")) return K_on;

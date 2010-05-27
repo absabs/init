@@ -25,6 +25,7 @@ int do_write(int nargs, char **args);
 int do_copy(int nargs, char **args);
 int do_chown(int nargs, char **args);
 int do_chmod(int nargs, char **args);
+int do_mknod(int nargs, char **args);
 int do_loglevel(int nargs, char **args);
 int do_device(int nargs, char **args);
 #define __MAKE_KEYWORD_ENUM__
@@ -71,6 +72,7 @@ enum {
     KEYWORD(copy,        COMMAND, 2, do_copy)
     KEYWORD(chown,       COMMAND, 2, do_chown)
     KEYWORD(chmod,       COMMAND, 2, do_chmod)
+    KEYWORD(mknod,       COMMAND, 5, do_mknod)
     KEYWORD(loglevel,    COMMAND, 1, do_loglevel)
     KEYWORD(device,      COMMAND, 4, do_device)
 #ifdef __MAKE_KEYWORD_ENUM__

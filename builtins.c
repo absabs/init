@@ -554,6 +554,35 @@ int do_chmod(int nargs, char **args) {
     return 0;
 }
 
+int do_mknod(int nargs, char **args) {
+    mode_t mode, perm, mask;
+    dev_t dev;
+
+    perm = get_mode(args[1]);
+    switch (args[3][0]) {
+        case 'c':
+        case 'u':
+            mode = S_IFCHR;
+            break;
+        case 'b':
+            mode = S_IFBLK;
+            break;
+        default:
+            return -1;
+    }
+
+    if (mode == S_IFCHR || mode == S_IFBLK)
+        dev = (atoi(args[4]) << 8) | atoi(args[5]);
+
+    mode |= perm;
+    mask = umask(0);
+    if (mknod(args[2], mode, dev) != 0)
+        return -errno;
+    umask(mask);
+
+    return 0;
+}
+
 int do_loglevel(int nargs, char **args) {
     if (nargs == 2) {
         log_set_level(atoi(args[1]));
