@@ -3,34 +3,44 @@ on init
 
 #    mount tmpfs tmpfs /tmp nosuid noatime nodiratime nodev mode=1777
     exec /sbin/sreadahead -d -t 20 &
+    exec /sbin/hwclock --systz --localtime --noadjfile &
     mount tmpfs tmpfs /lib/init/rw nosuid mode=0755
 #    mount proc proc /proc nodev noexec nosuid
 #    mount sysfs sysfs /sys nodev noexec nosuid
     mount tmpfs varrun /var/run nosuid mode=0755
     mount tmpfs varlock /var/lock nodev noexec nosuid mode=0755
+    mount tmpfs varlock /var/log nodev noexec nosuid mode=0755
+    mkdir /var/log/apt 0755
     mount tmpfs udev /dev mode=0755
-    exec mknod -m 666 /dev/null c 1 3
-    exec udevd --daemon
-    exec udevadm trigger
-    exec udevadm settle
+    mknod 0666 /dev/null c 1 3
+#    exec /sbin/modprobe nvidia &
+    exec /sbin/udevd --daemon
+    exec /sbin/udevadm trigger
+#    exec /sbin/udevadm settle & 
     mkdir /dev/shm 1777
     mount tmpfs tmpfs /dev/shm nodev nosuid
     mkdir /dev/pts 0755
     mount devpts devpts /dev/pts noexec nosuid gid=5 mode=620
     mkdir /dev/socket 0755
-#    exec mknod -m 666 /dev/ptmx c 5 2
-    exec /sbin/hwclock --systz --localtime --directisa --noadjfile
-    exec mount -n -o remount,rw /
-    exec mount -a
+    mknod 0660 /dev/tty2 c 4 2
+    mknod 0660 /dev/tty7 c 4 7
+    mknod 0600 /dev/console c 5 1
+    mknod 0660 /dev/sda8 b 8 8
+    mknod 0660 /dev/sda10 b 8 10
+#    mknod 0666 /dev/ptmx c 5 2
+#    exec /bin/mount -n -o remount,rw /
+#    exec /bin/mount -a
+    mount xfs /dev/sda10 / remount rw noatime nodiratime noquota,nobarrier,logbufs=8,logbsize=256k
+    mount xfs /dev/sda8 /home rw noatime nodiratime noquota,nobarrier,logbufs=8,logbsize=32k
     mkdir /tmp/.X11-unix 1777
     mkdir /tmp/.ICE-unix 1777
     
-    ifup lo
-    ifup eth0
     hostname ustc
 on boot
     class_start default
-service slim /usr/bin/slim
+service uxlaunch /usr/bin/uxlaunch -u zjs -s /usr/bin/openbox-session -t 7 
     oneshot
-service dhcp /sbin/dhclient
+    console
+service rclocal /init.local
     oneshot
+    console

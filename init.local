@@ -1,0 +1,8 @@
+#!/bin/sh -e
+
+udevadm settle
+ifup -a &
+/etc/init.d/alsa-utils start &
+/sbin/getty 38400 tty2 &
+modprobe powernow-k8 &
+exit 0
